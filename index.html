@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f7f4" />
+    <meta
+      name="description"
+      content="好きな動画に、好きなコメントを。SHIMOMIYAはみんなで楽しむ動画コミュニティです。"
+    />
+    <title>SHIMOMIYA — 好きが流れる動画コミュニティ</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/shimomiya-mark.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="SHIMOMIYA ホーム">
+        <img class="brand-icon" src="./assets/shimomiya-logo.png" alt="" />
+        <span class="brand-name">SHIMOMIYA</span>
+        <span class="brand-tagline">好きが流れる。</span>
+      </a>
+      <form class="search" role="search" id="search-form">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+        <input id="search-input" type="search" placeholder="動画・クリエイターを検索" aria-label="動画・クリエイターを検索" />
+        <kbd>/</kbd>
+      </form>
+      <div class="header-actions">
+        <button class="upload-button" id="upload-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"></path></svg>
+          <span>投稿する</span>
+        </button>
+        <button class="avatar-button" id="account-button" type="button" aria-label="ログイン">m</button>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <aside class="sidebar" aria-label="メインメニュー">
+        <div class="sidebar-group">
+          <p class="sidebar-label">DISCOVER</p>
+          <button class="nav-link active" data-view="おすすめ" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"></path></svg>
+            <span>おすすめ</span>
+          </button>
+          <button class="nav-link" data-view="ランキング" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19h16M6 16V9m6 7V5m6 11v-4"></path></svg>
+            <span>ランキング</span>
+          </button>
+          <button class="nav-link" data-view="新着動画" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+            <span>新着動画</span>
+          </button>
+        </div>
+        <div class="sidebar-group category-group">
+          <p class="sidebar-label">CATEGORIES</p>
+          <button class="nav-link category-link" data-category="音楽" type="button"><span class="category-dot dot-music"></span><span>音楽</span></button>
+          <button class="nav-link category-link" data-category="ゲーム" type="button"><span class="category-dot dot-game"></span><span>ゲーム</span></button>
+          <button class="nav-link category-link" data-category="料理" type="button"><span class="category-dot dot-food"></span><span>料理</span></button>
+          <button class="nav-link category-link" data-category="アニメーション" type="button"><span class="category-dot dot-art"></span><span>アニメーション</span></button>
+          <button class="nav-link category-link" data-category="日常" type="button"><span class="category-dot dot-life"></span><span>日常</span></button>
+        </div>
+        <div class="sidebar-note">
+          <img src="./assets/shimomiya-logo.png" alt="" />
+          <p>コメントでつながる、<br />みんなの動画広場。</p>
+          <span>SHIMOMIYAについて <span aria-hidden="true">↗</span></span>
+        </div>
+        <div class="sidebar-footer">© 2025 SHIMOMIYA</div>
+      </aside>
+
+      <main class="main-content">
+        <section class="hero" aria-labelledby="hero-title">
+          <img class="hero-photo" src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1800&q=85" alt="" />
+          <div class="hero-shade"></div>
+          <div class="hero-copy">
+            <span class="eyebrow"><span class="live-dot"></span> 今週のピックアップ</span>
+            <h1 id="hero-title">日常のなかに、<br />小さな発見を。</h1>
+            <p>何気ない瞬間が、誰かの「好き」になる。</p>
+            <button class="hero-button" id="hero-play" type="button">ピックアップを見る <span aria-hidden="true">↗</span></button>
+          </div>
+          <div class="hero-pagination"><span class="current">01</span><span class="pagination-line"></span><span>03</span></div>
+        </section>
+
+        <section class="watch-section" id="watch-section" aria-label="ピックアップ動画プレイヤー">
+          <div class="section-heading watch-heading">
+            <div><span class="eyebrow dark-eyebrow">TODAY'S PICK</span><h2>いま、みんなで見てる。</h2></div>
+            <button class="text-button" type="button" id="close-player">プレイヤーを閉じる <span aria-hidden="true">×</span></button>
+          </div>
+          <div class="watch-layout">
+            <div class="watch-main">
+              <div class="video-frame" id="video-frame">
+                <video id="main-video" poster="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1400&q=85" controls playsinline>
+                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                  お使いのブラウザは動画再生に対応していません。
+                </video>
+                <div class="comment-layer" id="comment-layer" aria-live="off"></div>
+                <div class="video-badge"><span class="live-dot"></span> COMMENTS ON</div>
+              </div>
+              <div class="video-info">
+                <div class="video-title-block">
+                  <span class="video-category">日常 · 風景</span>
+                  <h3>朝の光と、花のある暮らし。｜週末の小さな記録</h3>
+                  <p>ゆっくり流れる時間を、みんなと一緒に。</p>
+                </div>
+                <button class="like-button" id="like-button" type="button" aria-pressed="false">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.8 8.7c0 4.1-8.8 10.1-8.8 10.1S3.2 12.8 3.2 8.7a4.5 4.5 0 0 1 8.8-1.1 4.5 4.5 0 0 1 8.8 1.1Z"></path></svg>
+                  <span id="like-count">248</span>
+                </button>
+              </div>
+              <div class="comment-composer">
+                <span class="composer-avatar">m</span>
+                <form id="comment-form">
+                  <label class="visually-hidden" for="comment-input">コメントを入力</label>
+                  <input id="comment-input" type="text" maxlength="60" placeholder="いまの気持ちをコメントしよう…" autocomplete="off" />
+                  <button type="submit" aria-label="コメントを送信"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 3-7.5 18-3.8-7.7L2 9.5 21 3Zm0 0L9.7 13.3"></path></svg></button>
+                </form>
+              </div>
+              <div class="comment-tools">
+                <span><span class="live-dot"></span> <strong id="comment-count">1,284</strong> 件のコメント</span>
+                <button type="button" id="toggle-comments" aria-pressed="true">コメントを非表示 <span class="toggle-switch"><i></i></span></button>
+              </div>
+            </div>
+            <aside class="chat-panel" aria-label="流れるコメント">
+              <div class="chat-header"><span>みんなのコメント</span><span class="chat-live"><i></i> LIVE</span></div>
+              <div class="chat-list" id="chat-list"></div>
+              <div class="chat-footer">コメントは動画の上を流れます <span aria-hidden="true">↗</span></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="feed-section" id="feed-section">
+          <div class="section-heading">
+            <div><span class="eyebrow dark-eyebrow">FOR YOU</span><h2 id="feed-title">あなたへのおすすめ</h2><p class="connection-status" id="connection-status" role="status">サンプル動画を表示中</p></div>
+            <button class="text-button" id="sort-button" type="button">人気順 <span aria-hidden="true">⌄</span></button>
+          </div>
+          <div class="category-pills" aria-label="カテゴリーで絞り込み">
+            <button class="pill active" data-category="すべて" type="button">すべて</button>
+            <button class="pill" data-category="音楽" type="button">♪ 音楽</button>
+            <button class="pill" data-category="ゲーム" type="button">▣ ゲーム</button>
+            <button class="pill" data-category="料理" type="button">✿ 料理</button>
+            <button class="pill" data-category="アニメーション" type="button">✳ アニメ</button>
+            <button class="pill" data-category="日常" type="button">⌂ 日常</button>
+          </div>
+          <div class="video-grid" id="video-grid"></div>
+          <div class="empty-state" id="empty-state" hidden>該当する動画がありません。別のキーワードで検索してみてください。</div>
+        </section>
+        <footer class="mobile-footer">SHIMOMIYA <span>好きが流れる。</span></footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="app-dialog" id="auth-dialog" aria-labelledby="auth-title">
+      <form class="dialog-card" id="auth-form">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+        <span class="eyebrow dark-eyebrow">YOUR SHIMOMIYA</span>
+        <h2 id="auth-title">アカウントにログイン</h2>
+        <p class="dialog-description" id="auth-description">ログインすると動画を投稿できます。</p>
+        <label for="auth-email">メールアドレス</label>
+        <input id="auth-email" type="email" autocomplete="email" required />
+        <label for="auth-password">パスワード</label>
+        <input id="auth-password" type="password" minlength="6" autocomplete="current-password" required />
+        <p class="dialog-error" id="auth-error" role="alert"></p>
+        <button class="dialog-submit" type="submit" id="auth-submit">ログイン</button>
+        <button class="dialog-switch" type="button" id="auth-switch">アカウントを作成</button>
+      </form>
+    </dialog>
+    <dialog class="app-dialog" id="upload-dialog" aria-labelledby="upload-title">
+      <form class="dialog-card" id="upload-form">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+        <span class="eyebrow dark-eyebrow">SHARE YOUR VIDEO</span>
+        <h2 id="upload-title">動画を投稿する</h2>
+        <p class="dialog-description">動画ファイルはSupabase Storageに保存されます。</p>
+        <label for="upload-title-input">タイトル</label>
+        <input id="upload-title-input" type="text" maxlength="120" required placeholder="動画のタイトル" />
+        <label for="upload-description-input">説明</label>
+        <textarea id="upload-description-input" rows="3" maxlength="1000" placeholder="動画について"></textarea>
+        <label for="upload-category">カテゴリー</label>
+        <select id="upload-category">
+          <option>日常</option><option>音楽</option><option>ゲーム</option><option>料理</option><option>アニメーション</option>
+        </select>
+        <label for="upload-file">動画ファイル（MP4 / WebM / MOV・100MBまで）</label>
+        <input id="upload-file" type="file" accept="video/mp4,video/webm,video/quicktime" required />
+        <p class="dialog-error" id="upload-error" role="alert"></p>
+        <button class="dialog-submit" type="submit" id="upload-submit">アップロード</button>
+      </form>
+    </dialog>
+    <script src="./supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
