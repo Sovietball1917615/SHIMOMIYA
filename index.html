@@ -71,24 +71,24 @@
           <img class="hero-photo" src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1800&q=85" alt="" />
           <div class="hero-shade"></div>
           <div class="hero-copy">
-            <span class="eyebrow"><span class="live-dot"></span> 今週のピックアップ</span>
+            <span class="eyebrow"><span class="live-dot"></span> SHIMOMIYA VIDEO</span>
             <h1 id="hero-title">日常のなかに、<br />小さな発見を。</h1>
             <p>何気ない瞬間が、誰かの「好き」になる。</p>
-            <button class="hero-button" id="hero-play" type="button">ピックアップを見る <span aria-hidden="true">↗</span></button>
+            <button class="hero-button" id="hero-play" type="button">最新の投稿を見る <span aria-hidden="true">↗</span></button>
           </div>
           <div class="hero-pagination"><span class="current">01</span><span class="pagination-line"></span><span>03</span></div>
         </section>
 
-        <section class="watch-section" id="watch-section" aria-label="ピックアップ動画プレイヤー">
+        <section class="watch-section" id="watch-section" aria-label="動画プレイヤー" hidden>
           <div class="section-heading watch-heading">
-            <div><span class="eyebrow dark-eyebrow">TODAY'S PICK</span><h2>いま、みんなで見てる。</h2></div>
+            <div><span class="eyebrow dark-eyebrow">NOW PLAYING</span><h2>動画を再生中</h2></div>
             <button class="text-button" type="button" id="close-player">プレイヤーを閉じる <span aria-hidden="true">×</span></button>
           </div>
           <div class="watch-layout">
             <div class="watch-main">
               <div class="video-frame" id="video-frame">
-                <video id="main-video" poster="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1400&q=85" controls playsinline>
-                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                <video id="main-video" controls playsinline>
+                  <source src="" type="video/mp4" />
                   お使いのブラウザは動画再生に対応していません。
                 </video>
                 <div class="comment-layer" id="comment-layer" aria-live="off"></div>
@@ -96,13 +96,13 @@
               </div>
               <div class="video-info">
                 <div class="video-title-block">
-                  <span class="video-category">日常 · 風景</span>
-                  <h3>朝の光と、花のある暮らし。｜週末の小さな記録</h3>
-                  <p>ゆっくり流れる時間を、みんなと一緒に。</p>
+                  <span class="video-category">投稿動画</span>
+                  <h3>動画を選択してください</h3>
+                  <p>一覧から動画を選ぶと、ここで再生できます。</p>
                 </div>
                 <button class="like-button" id="like-button" type="button" aria-pressed="false">
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.8 8.7c0 4.1-8.8 10.1-8.8 10.1S3.2 12.8 3.2 8.7a4.5 4.5 0 0 1 8.8-1.1 4.5 4.5 0 0 1 8.8 1.1Z"></path></svg>
-                  <span id="like-count">248</span>
+                  <span id="like-count">0</span>
                 </button>
               </div>
               <div class="comment-composer">
@@ -114,21 +114,22 @@
                 </form>
               </div>
               <div class="comment-tools">
-                <span><span class="live-dot"></span> <strong id="comment-count">1,284</strong> 件のコメント</span>
+                <span><span class="live-dot"></span> <strong id="comment-count">0</strong> 件のコメント</span>
                 <button type="button" id="toggle-comments" aria-pressed="true">コメントを非表示 <span class="toggle-switch"><i></i></span></button>
               </div>
             </div>
             <aside class="chat-panel" aria-label="流れるコメント">
-              <div class="chat-header"><span>みんなのコメント</span><span class="chat-live"><i></i> LIVE</span></div>
+              <div class="chat-header"><span>この動画のコメント</span></div>
               <div class="chat-list" id="chat-list"></div>
-              <div class="chat-footer">コメントは動画の上を流れます <span aria-hidden="true">↗</span></div>
+              <div class="chat-empty" id="chat-empty">まだコメントはありません。</div>
+              <div class="chat-footer">投稿したコメントが動画の上を流れます <span aria-hidden="true">↗</span></div>
             </aside>
           </div>
         </section>
 
         <section class="feed-section" id="feed-section">
           <div class="section-heading">
-            <div><span class="eyebrow dark-eyebrow">FOR YOU</span><h2 id="feed-title">あなたへのおすすめ</h2><p class="connection-status" id="connection-status" role="status">サンプル動画を表示中</p></div>
+            <div><span class="eyebrow dark-eyebrow">SHIMOMIYA</span><h2 id="feed-title">投稿動画</h2><p class="connection-status" id="connection-status" role="status">動画を読み込み中…</p></div>
             <button class="text-button" id="sort-button" type="button">人気順 <span aria-hidden="true">⌄</span></button>
           </div>
           <div class="category-pills" aria-label="カテゴリーで絞り込み">

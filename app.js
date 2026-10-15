@@ -1,125 +1,3 @@
-const videos = [
-  {
-    title: "夜明けの海沿いを、ただ歩くだけ。",
-    creator: "kaho film",
-    avatar: "k",
-    avatarColor: "#d8e5df",
-    category: "日常",
-    views: "12.4K",
-    comments: "328",
-    likes: 156,
-    duration: "08:42",
-    image: "photo-1500375592092-40eb2168fd21",
-  },
-  {
-    title: "このコード進行、ずっと聴いていたい。",
-    creator: "mugi sounds",
-    avatar: "m",
-    avatarColor: "#edd9d2",
-    category: "音楽",
-    views: "8,902",
-    comments: "219",
-    likes: 201,
-    duration: "03:18",
-    image: "photo-1511379938547-c1f69419868d",
-  },
-  {
-    title: "喫茶店のプリンを、家でも作りたくて。",
-    creator: "おやつ日記",
-    avatar: "お",
-    avatarColor: "#f0e2bb",
-    category: "料理",
-    views: "7,610",
-    comments: "184",
-    likes: 178,
-    duration: "12:06",
-    image: "photo-1488477181946-6428a0291777",
-  },
-  {
-    title: "初見でこのステージ行けると思わないじゃん",
-    creator: "natsu game",
-    avatar: "n",
-    avatarColor: "#d9ddf0",
-    category: "ゲーム",
-    views: "19.1K",
-    comments: "642",
-    likes: 512,
-    duration: "16:51",
-    image: "photo-1542751371-adc38448a05e",
-  },
-  {
-    title: "雨の日の散歩、音だけ集めてみました。",
-    creator: "sora no oto",
-    avatar: "s",
-    avatarColor: "#dce9ed",
-    category: "日常",
-    views: "5,208",
-    comments: "97",
-    likes: 84,
-    duration: "05:27",
-    image: "photo-1519608487953-e999c86e7455",
-  },
-  {
-    title: "絵が動き出すまでの30秒。",
-    creator: "poco studio",
-    avatar: "p",
-    avatarColor: "#e8dcef",
-    category: "アニメーション",
-    views: "11.7K",
-    comments: "403",
-    likes: 366,
-    duration: "00:30",
-    image: "photo-1513364776144-60967b0f800f",
-  },
-  {
-    title: "帰り道に見つけた、春の色。",
-    creator: "kaho film",
-    avatar: "k",
-    avatarColor: "#d8e5df",
-    category: "日常",
-    views: "4,822",
-    comments: "113",
-    likes: 109,
-    duration: "04:12",
-    image: "photo-1490750967868-88aa4486c946",
-  },
-  {
-    title: "休日の朝に聴く、ピアノの小品。",
-    creator: "mugi sounds",
-    avatar: "m",
-    avatarColor: "#edd9d2",
-    category: "音楽",
-    views: "6,350",
-    comments: "152",
-    likes: 143,
-    duration: "02:55",
-    image: "photo-1520523839897-bd0b52f945a0",
-  },
-  {
-    title: "じっくり煮込んだ週末のカレー。",
-    creator: "おやつ日記",
-    avatar: "お",
-    avatarColor: "#f0e2bb",
-    category: "料理",
-    views: "9,104",
-    comments: "268",
-    likes: 249,
-    duration: "10:14",
-    image: "photo-1603894584373-5ac82b2ae398",
-  },
-];
-
-const messages = [
-  { user: "mio", text: "この朝の空気感すき", color: "#e8d8ed", commentColor: "color-pink" },
-  { user: "つき", text: "わかる、深呼吸したくなる", color: "#dce8dd" },
-  { user: "ao", text: "ここで一回止めて見ちゃった", color: "#dce4f0", commentColor: "color-blue" },
-  { user: "こめ", text: "花びらきれい！", color: "#f2e7ce", commentColor: "color-yellow" },
-  { user: "yuki", text: "なんか今日もがんばれそう", color: "#e8ded7" },
-  { user: "nana", text: "音と映像が心地いいなあ", color: "#eadde4", commentColor: "color-green" },
-  { user: "rin", text: "この場所行ってみたい", color: "#dfebeb" },
-  { user: "sumi", text: "ずっと見ていられる", color: "#eee3d1", commentColor: "color-yellow" },
-];
-
 const grid = document.querySelector("#video-grid");
 const searchInput = document.querySelector("#search-input");
 const commentLayer = document.querySelector("#comment-layer");
@@ -129,7 +7,7 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let selectedCategory = "すべて";
 let sortOrder = "popular";
 let toastTimeout;
-let currentLikes = 248;
+let currentLikes = 0;
 let currentUser = null;
 let remoteVideos = [];
 let supabaseClient = null;
@@ -161,7 +39,7 @@ function viewCount(video) {
 }
 
 function allVideos() {
-  return [...videos, ...remoteVideos];
+  return remoteVideos;
 }
 
 function renderVideos() {
@@ -195,6 +73,11 @@ function renderVideos() {
   `).join("");
 
   document.querySelector("#empty-state").hidden = filteredVideos.length > 0;
+  document.querySelector("#empty-state").textContent = filteredVideos.length > 0
+    ? ""
+    : allVideos().length === 0
+      ? "まだ動画がありません。最初の動画を投稿してみましょう。"
+      : "該当する動画がありません。別のキーワードやカテゴリーを試してください。";
   grid.hidden = filteredVideos.length === 0;
   grid.querySelectorAll(".video-card").forEach((card) => {
     card.addEventListener("click", () => playVideo(filteredVideos[Number(card.dataset.videoIndex)]));
@@ -208,10 +91,17 @@ function renderVideos() {
 }
 
 function playVideo(video) {
+  if (!video?.video_url) {
+    showToast("再生できる投稿動画がありません");
+    return;
+  }
   const player = document.querySelector("#main-video");
   const source = player.querySelector("source");
-  source.src = video.video_url || "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+  source.src = video.video_url;
   player.load();
+  commentLayer.replaceChildren();
+  chatList.replaceChildren();
+  document.querySelector("#chat-empty").hidden = false;
   player.poster = imageUrl(video.image, 1400);
   document.querySelector(".video-category").textContent = `CATEGORY · ${video.category}`;
   document.querySelector(".video-title-block h3").textContent = video.title;
@@ -253,7 +143,13 @@ async function loadRemoteVideos() {
       isRemote: true,
     };
   });
+  document.querySelector("#connection-status").textContent = remoteVideos.length
+    ? `${remoteVideos.length} 件の投稿動画`
+    : "まだ動画がありません。最初の動画を投稿してください。";
   renderVideos();
+  document.querySelector("#watch-section").hidden = true;
+  document.querySelector("#comment-count").textContent = "0";
+  document.querySelector("#like-count").textContent = "0";
 }
 
 function renderChatMessage(message) {
@@ -274,6 +170,7 @@ function renderChatMessage(message) {
   body.append(user, text);
   item.append(avatar, body);
   chatList.append(item);
+  document.querySelector("#chat-empty").hidden = true;
   while (chatList.children.length > 18) chatList.firstElementChild.remove();
   chatList.scrollTop = chatList.scrollHeight;
 }
@@ -400,22 +297,9 @@ function selectCategory(category) {
   selectedCategory = category;
   document.querySelectorAll(".pill").forEach((pill) => pill.classList.toggle("active", pill.dataset.category === category));
   document.querySelectorAll(".category-link").forEach((link) => link.classList.toggle("active", link.dataset.category === category));
-  document.querySelector("#feed-title").textContent = category === "すべて" ? "あなたへのおすすめ" : `${category}の動画`;
+  document.querySelector("#feed-title").textContent = category === "すべて" ? "投稿動画" : `${category}の動画`;
   renderVideos();
 }
-
-messages.forEach((message, index) => {
-  window.setTimeout(() => {
-    renderChatMessage(message);
-    launchComment(message.text, { color: message.commentColor, user: null });
-  }, index * 420);
-});
-
-window.setInterval(() => {
-  if (document.hidden) return;
-  const message = messages[Math.floor(Math.random() * messages.length)];
-  launchComment(message.text, { color: message.commentColor, user: message.user });
-}, 3600);
 
 document.querySelector("#comment-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -426,7 +310,7 @@ document.querySelector("#comment-form").addEventListener("submit", (event) => {
     return;
   }
   launchComment(text, { color: "color-yellow", user: "me" });
-  document.querySelector("#comment-count").textContent = (Number(document.querySelector("#comment-count").textContent.replace(",", "")) + 1).toLocaleString("ja-JP");
+  document.querySelector("#comment-count").textContent = (Number(document.querySelector("#comment-count").textContent.replaceAll(",", "")) + 1).toLocaleString("ja-JP");
   input.value = "";
 });
 
@@ -461,7 +345,7 @@ document.querySelectorAll(".category-link").forEach((link) => link.addEventListe
 document.querySelectorAll(".nav-link[data-view]").forEach((link) => link.addEventListener("click", () => {
   document.querySelectorAll(".nav-link[data-view]").forEach((item) => item.classList.toggle("active", item === link));
   sortOrder = link.dataset.view === "新着動画" ? "newest" : "popular";
-  document.querySelector("#feed-title").textContent = link.dataset.view === "おすすめ" ? "あなたへのおすすめ" : link.dataset.view;
+  document.querySelector("#feed-title").textContent = link.dataset.view === "おすすめ" ? "投稿動画" : link.dataset.view;
   document.querySelector("#sort-button").innerHTML = sortOrder === "popular" ? '人気順 <span aria-hidden="true">⌄</span>' : '新着順 <span aria-hidden="true">⌄</span>';
   renderVideos();
   if (link.dataset.view === "新着動画") showToast("新着動画を表示しています");
@@ -470,18 +354,17 @@ document.querySelectorAll(".nav-link[data-view]").forEach((link) => link.addEven
 }));
 
 document.querySelector("#hero-play").addEventListener("click", () => {
-  playVideo({
-    title: "朝の光と、花のある暮らし。｜週末の小さな記録",
-    creator: "SHIMOMIYA pick",
-    views: "12.8K",
-    comments: "1,284",
-    likes: 248,
-    image: "photo-1470252649378-9c29740c9fa8",
-    category: "日常 · 風景",
-  });
+  const latestVideo = [...remoteVideos].sort((first, second) => new Date(second.created_at) - new Date(first.created_at))[0];
+  if (latestVideo) {
+    playVideo(latestVideo);
+  } else {
+    showToast("まずは投稿動画を選ぶか、ログインして動画を投稿してください");
+    document.querySelector("#feed-section").scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth" });
+  }
 });
 
 document.querySelector("#close-player").addEventListener("click", () => {
+  document.querySelector("#main-video").pause();
   document.querySelector("#watch-section").hidden = true;
   showToast("プレイヤーを閉じました");
 });
