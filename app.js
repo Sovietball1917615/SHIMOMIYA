@@ -9,6 +9,7 @@ let sortOrder = "popular";
 let toastTimeout;
 let currentLikes = 0;
 let currentUser = null;
+let currentProfile = null;
 let remoteVideos = [];
 let supabaseClient = null;
 
@@ -185,14 +186,26 @@ async function loadRemoteVideos() {
     .order("created_at", { ascending: false });
   if (error) throw error;
 
+  const ownerIds = [...new Set(data.map((video) => video.owner_id))];
+  let profilesByUserId = new Map();
+  if (ownerIds.length) {
+    const { data: profiles, error: profilesError } = await supabaseClient
+      .from("profiles")
+      .select("user_id, display_name")
+      .in("user_id", ownerIds);
+    if (profilesError) throw profilesError;
+    profilesByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  }
+
   remoteVideos = data.map((video) => {
     const { data: publicUrl } = supabaseClient.storage.from("videos").getPublicUrl(video.video_path);
+    const profile = profilesByUserId.get(video.owner_id);
     return {
       id: video.id,
       title: video.title,
       description: video.description,
-      creator: `SHIMOMIYA user ${video.owner_id.slice(0, 6)}`,
-      avatar: "S",
+      creator: profile?.display_name || `SHIMOMIYA user ${video.owner_id.slice(0, 6)}`,
+      avatar: (profile?.display_name || "S").slice(0, 1).toUpperCase(),
       avatarColor: "#eadde4",
       category: video.category,
       views: "0",
@@ -212,6 +225,26 @@ async function loadRemoteVideos() {
   document.querySelector("#watch-section").hidden = true;
   document.querySelector("#comment-count").textContent = "0";
   document.querySelector("#like-count").textContent = "0";
+}
+
+async function loadProfile(user) {
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("user_id, display_name, bio")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error) throw error;
+
+  if (data) return data;
+
+  const defaultName = user.user_metadata?.display_name || user.email?.split("@")[0] || "SHIMOMIYA user";
+  const { data: createdProfile, error: createError } = await supabaseClient
+    .from("profiles")
+    .upsert({ user_id: user.id, display_name: defaultName, bio: "" }, { onConflict: "user_id" })
+    .select("user_id, display_name, bio")
+    .single();
+  if (createError) throw createError;
+  return createdProfile;
 }
 
 function renderChatMessage(message) {
@@ -258,8 +291,9 @@ function showToast(message) {
 function updateAccountUI() {
   const accountButton = document.querySelector("#account-button");
   if (currentUser) {
-    accountButton.textContent = (currentUser.email || "U").slice(0, 1).toUpperCase();
-    accountButton.setAttribute("aria-label", `ログイン中: ${currentUser.email}（ログアウト）`);
+    const displayName = currentProfile?.display_name || currentUser.email?.split("@")[0] || "U";
+    accountButton.textContent = displayName.slice(0, 1).toUpperCase();
+    accountButton.setAttribute("aria-label", `プロフィールを編集: ${displayName}`);
     document.querySelector("#connection-status").textContent = "Supabaseに接続中 · 動画投稿できます";
   } else if (supabaseReady) {
     accountButton.textContent = "m";
@@ -271,6 +305,80 @@ function updateAccountUI() {
     document.querySelector("#connection-status").textContent = supabaseConfigured
       ? "Supabase SDKを読み込めません。インターネット接続を確認してください"
       : "Supabase未設定 · READMEの設定手順を確認してください";
+  }
+}
+
+function openProfileDialog() {
+  if (!currentUser) {
+    openAuthDialog();
+    return;
+  }
+  document.querySelector("#profile-error").textContent = "";
+  document.querySelector("#profile-email").textContent = currentUser.email || "";
+  document.querySelector("#profile-display-name").value = currentProfile?.display_name || currentUser.email?.split("@")[0] || "";
+  document.querySelector("#profile-bio").value = currentProfile?.bio || "";
+  document.querySelector("#profile-dialog").showModal();
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  if (!currentUser) return;
+
+  const displayName = document.querySelector("#profile-display-name").value.trim();
+  const bio = document.querySelector("#profile-bio").value.trim();
+  const errorMessage = document.querySelector("#profile-error");
+  const submitButton = document.querySelector("#profile-submit");
+  errorMessage.textContent = "";
+  if (!displayName) {
+    errorMessage.textContent = "表示名を入力してください。";
+    return;
+  }
+
+  submitButton.disabled = true;
+  try {
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .upsert({
+        user_id: currentUser.id,
+        display_name: displayName,
+        bio,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" })
+      .select("user_id, display_name, bio")
+      .single();
+    if (error) throw error;
+
+    currentProfile = data;
+    updateAccountUI();
+    await loadRemoteVideos();
+    document.querySelector("#profile-dialog").close();
+    showToast("プロフィールを更新しました");
+  } catch (error) {
+    errorMessage.textContent = `プロフィールを保存できませんでした: ${error.message}`;
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function syncSession(session) {
+  currentUser = session?.user || null;
+  currentProfile = null;
+  updateAccountUI();
+  if (currentUser) {
+    try {
+      currentProfile = await loadProfile(currentUser);
+      updateAccountUI();
+    } catch (error) {
+      document.querySelector("#connection-status").textContent = `プロフィールの読み込みに失敗: ${error.message}`;
+    }
+  } else {
+    document.querySelector("#profile-dialog").close();
+  }
+
+  try {
+    await loadRemoteVideos();
+  } catch (error) {
+    document.querySelector("#connection-status").textContent = `動画の読み込みに失敗: ${error.message}`;
   }
 }
 
@@ -484,16 +592,16 @@ document.querySelector("#upload-button").addEventListener("click", () => {
     openAuthDialog(true);
   }
 });
-document.querySelector("#account-button").addEventListener("click", () => {
-  if (!currentUser) {
-    openAuthDialog();
-    return;
-  }
+document.querySelector("#account-button").addEventListener("click", openProfileDialog);
+async function signOut() {
+  if (!currentUser) return;
   supabaseClient.auth.signOut().then(({ error }) => {
     if (error) showToast(`ログアウトに失敗しました: ${error.message}`);
     else showToast("ログアウトしました");
   });
-});
+}
+document.querySelector("#profile-logout").addEventListener("click", signOut);
+document.querySelector("#profile-form").addEventListener("submit", saveProfile);
 document.querySelector("#auth-switch").addEventListener("click", (event) => {
   authMode = authMode === "login" ? "signup" : "login";
   document.querySelector("#auth-error").textContent = "";
@@ -551,24 +659,14 @@ document.querySelector("#sort-button").addEventListener("click", (event) => {
 if (supabaseReady) {
   document.querySelector("#connection-status").textContent = "Supabaseに接続中…";
   supabaseClient.auth.onAuthStateChange((_event, session) => {
-    window.setTimeout(() => {
-      currentUser = session?.user || null;
-      updateAccountUI();
-      loadRemoteVideos().catch((error) => {
-        document.querySelector("#connection-status").textContent = `動画の読み込みに失敗: ${error.message}`;
-      });
-    }, 0);
+    window.setTimeout(() => syncSession(session), 0);
   });
   supabaseClient.auth.getSession().then(({ data, error }) => {
     if (error) {
       document.querySelector("#connection-status").textContent = `Supabase認証エラー: ${error.message}`;
       return;
     }
-    currentUser = data.session?.user || null;
-    updateAccountUI();
-    loadRemoteVideos().catch((loadError) => {
-      document.querySelector("#connection-status").textContent = `動画の読み込みに失敗: ${loadError.message}`;
-    });
+    syncSession(data.session);
   });
 } else {
   updateAccountUI();

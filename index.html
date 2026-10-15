@@ -209,6 +209,21 @@
         <button class="dialog-submit" type="submit" id="upload-submit">アップロード</button>
       </form>
     </dialog>
+    <dialog class="app-dialog" id="profile-dialog" aria-labelledby="profile-title">
+      <form class="dialog-card" id="profile-form">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+        <span class="eyebrow dark-eyebrow">YOUR SHIMOMIYA</span>
+        <h2 id="profile-title">プロフィールを編集</h2>
+        <p class="dialog-description" id="profile-email"></p>
+        <label for="profile-display-name">表示名</label>
+        <input id="profile-display-name" type="text" maxlength="40" required placeholder="動画に表示される名前" />
+        <label for="profile-bio">自己紹介</label>
+        <textarea id="profile-bio" rows="4" maxlength="200" placeholder="好きなことや、あなたについて"></textarea>
+        <p class="dialog-error" id="profile-error" role="alert"></p>
+        <button class="dialog-submit" type="submit" id="profile-submit">変更を保存</button>
+        <button class="dialog-switch" type="button" id="profile-logout">ログアウト</button>
+      </form>
+    </dialog>
     <script src="./supabase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./app.js"></script>
