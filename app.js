@@ -57,7 +57,7 @@ function renderVideos() {
   grid.innerHTML = filteredVideos.map((video, index) => `
     <article class="video-card" tabindex="0" role="button" aria-label="${escapeHtml(video.title)} を再生" data-video-index="${index}">
       <div class="card-thumbnail">
-        <img src="${imageUrl(video.image)}" alt="" loading="lazy" />
+        <img src="${escapeHtml(video.thumbnail_url || imageUrl(video.image))}" alt="" loading="lazy" />
         <span class="card-comment-count">◌ ${video.comments}</span>
         <span class="card-duration">${video.duration}</span>
         ${video.isRemote ? '<span class="card-upload-label">投稿動画</span>' : ""}
@@ -103,7 +103,7 @@ function playVideo(video) {
   commentLayer.replaceChildren();
   chatList.replaceChildren();
   document.querySelector("#chat-empty").hidden = false;
-  player.poster = imageUrl(video.image, 1400);
+  player.poster = video.thumbnail_url || imageUrl(video.image, 1400);
   document.querySelector(".video-category").textContent = `CATEGORY · ${video.category}`;
   document.querySelector(".video-title-block h3").textContent = video.title;
   document.querySelector(".video-title-block p").textContent = `${video.creator} · ${video.views} 回視聴${video.description ? ` · ${video.description}` : ""}`;
@@ -182,7 +182,7 @@ async function togglePlayback() {
 async function loadRemoteVideos() {
   const { data, error } = await supabaseClient
     .from("videos")
-    .select("id, owner_id, title, description, category, video_path, created_at")
+    .select("id, owner_id, title, description, category, video_path, thumbnail_path, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -199,6 +199,9 @@ async function loadRemoteVideos() {
 
   remoteVideos = data.map((video) => {
     const { data: publicUrl } = supabaseClient.storage.from("videos").getPublicUrl(video.video_path);
+    const { data: thumbnailUrl } = video.thumbnail_path
+      ? supabaseClient.storage.from("videos").getPublicUrl(video.thumbnail_path)
+      : { data: { publicUrl: null } };
     const profile = profilesByUserId.get(video.owner_id);
     return {
       id: video.id,
@@ -214,6 +217,7 @@ async function loadRemoteVideos() {
       duration: "VIDEO",
       image: "photo-1470252649378-9c29740c9fa8",
       video_url: publicUrl.publicUrl,
+      thumbnail_url: thumbnailUrl.publicUrl,
       created_at: video.created_at,
       isRemote: true,
     };
@@ -406,10 +410,13 @@ async function uploadVideo(event) {
   event.preventDefault();
   const fileInput = document.querySelector("#upload-file");
   const file = fileInput.files[0];
+  const thumbnailInput = document.querySelector("#upload-thumbnail");
+  const thumbnail = thumbnailInput.files[0];
   const title = document.querySelector("#upload-title-input").value.trim();
   const errorMessage = document.querySelector("#upload-error");
   const submitButton = document.querySelector("#upload-submit");
   const allowedTypes = ["video/mp4", "video/webm", "video/quicktime"];
+  const allowedThumbnailTypes = ["image/jpeg", "image/png", "image/webp"];
   errorMessage.textContent = "";
 
   if (!currentUser) {
@@ -424,9 +431,18 @@ async function uploadVideo(event) {
     errorMessage.textContent = "動画ファイルは100MB以下にしてください。";
     return;
   }
+  if (thumbnail && !allowedThumbnailTypes.includes(thumbnail.type)) {
+    errorMessage.textContent = "サムネイルはJPEG、PNG、WebP形式の画像を選択してください。";
+    return;
+  }
+  if (thumbnail && thumbnail.size > 5 * 1024 * 1024) {
+    errorMessage.textContent = "サムネイル画像は5MB以下にしてください。";
+    return;
+  }
 
   submitButton.disabled = true;
   submitButton.textContent = "アップロード中…";
+  const uploadedPaths = [];
   try {
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
     const objectId = crypto.randomUUID();
@@ -435,6 +451,18 @@ async function uploadVideo(event) {
       .from("videos")
       .upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
     if (storageError) throw storageError;
+    uploadedPaths.push(path);
+
+    let thumbnailPath = null;
+    if (thumbnail) {
+      const safeThumbnailName = thumbnail.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+      thumbnailPath = `${currentUser.id}/${objectId}-thumbnail-${safeThumbnailName}`;
+      const { error: thumbnailError } = await supabaseClient.storage
+        .from("videos")
+        .upload(thumbnailPath, thumbnail, { contentType: thumbnail.type, cacheControl: "3600", upsert: false });
+      if (thumbnailError) throw thumbnailError;
+      uploadedPaths.push(thumbnailPath);
+    }
 
     const { error: metadataError } = await supabaseClient.from("videos").insert({
       owner_id: currentUser.id,
@@ -442,21 +470,23 @@ async function uploadVideo(event) {
       description: document.querySelector("#upload-description-input").value.trim(),
       category: document.querySelector("#upload-category").value,
       video_path: path,
+      thumbnail_path: thumbnailPath,
     });
-    if (metadataError) {
-      const { error: cleanupError } = await supabaseClient.storage.from("videos").remove([path]);
-      if (cleanupError) {
-        throw new Error(`${metadataError.message} (アップロード済みファイルの削除にも失敗しました: ${cleanupError.message})`);
-      }
-      throw metadataError;
-    }
+    if (metadataError) throw metadataError;
+    uploadedPaths.length = 0;
 
     await loadRemoteVideos();
     document.querySelector("#upload-dialog").close();
     document.querySelector("#upload-form").reset();
+    resetThumbnailPreview();
     showToast("動画をSupabaseに保存して公開しました");
   } catch (error) {
-    errorMessage.textContent = `アップロードに失敗しました: ${error.message}`;
+    let message = error.message;
+    if (uploadedPaths.length) {
+      const { error: cleanupError } = await supabaseClient.storage.from("videos").remove(uploadedPaths);
+      if (cleanupError) message += ` (アップロード済みファイルの削除にも失敗しました: ${cleanupError.message})`;
+    }
+    errorMessage.textContent = `アップロードに失敗しました: ${message}`;
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "アップロード";
@@ -646,6 +676,27 @@ document.querySelector("#auth-form").addEventListener("submit", async (event) =>
   }
 });
 document.querySelector("#upload-form").addEventListener("submit", uploadVideo);
+let thumbnailPreviewUrl = null;
+function resetThumbnailPreview() {
+  if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+  thumbnailPreviewUrl = null;
+  document.querySelector("#thumbnail-preview").hidden = true;
+  document.querySelector("#thumbnail-preview-image").removeAttribute("src");
+}
+document.querySelector("#upload-thumbnail").addEventListener("change", (event) => {
+  resetThumbnailPreview();
+  const thumbnail = event.currentTarget.files[0];
+  if (!thumbnail) return;
+  const preview = document.querySelector("#thumbnail-preview");
+  const image = document.querySelector("#thumbnail-preview-image");
+  thumbnailPreviewUrl = URL.createObjectURL(thumbnail);
+  image.src = thumbnailPreviewUrl;
+  preview.hidden = false;
+});
+document.querySelector("#upload-dialog").addEventListener("close", () => {
+  resetThumbnailPreview();
+  document.querySelector("#upload-thumbnail").value = "";
+});
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
 document.querySelectorAll(".app-dialog").forEach((dialog) => dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();

@@ -203,6 +203,11 @@
         <select id="upload-category">
           <option>日常</option><option>音楽</option><option>ゲーム</option><option>料理</option><option>アニメーション</option>
         </select>
+        <label for="upload-thumbnail">サムネイル画像（任意・JPEG / PNG / WebP・5MBまで）</label>
+        <input id="upload-thumbnail" type="file" accept="image/jpeg,image/png,image/webp" />
+        <div class="thumbnail-preview" id="thumbnail-preview" hidden>
+          <img id="thumbnail-preview-image" alt="サムネイルのプレビュー" />
+        </div>
         <label for="upload-file">動画ファイル（MP4 / WebM / MOV・100MBまで）</label>
         <input id="upload-file" type="file" accept="video/mp4,video/webm,video/quicktime" required />
         <p class="dialog-error" id="upload-error" role="alert"></p>

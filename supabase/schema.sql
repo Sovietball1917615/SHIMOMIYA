@@ -7,8 +7,12 @@ create table if not exists public.videos (
   category text not null default '日常'
     check (category in ('日常', '音楽', 'ゲーム', '料理', 'アニメーション')),
   video_path text not null,
+  thumbnail_path text,
   created_at timestamptz not null default now()
 );
+
+alter table public.videos
+  add column if not exists thumbnail_path text;
 
 create index if not exists videos_created_at_idx
   on public.videos (created_at desc);
@@ -74,7 +78,7 @@ values (
   'videos',
   true,
   104857600,
-  array['video/mp4', 'video/webm', 'video/quicktime']
+  array['video/mp4', 'video/webm', 'video/quicktime', 'image/jpeg', 'image/png', 'image/webp']
 )
 on conflict (id) do update
 set public = excluded.public,
@@ -88,6 +92,7 @@ create policy "Videos are publicly viewable"
   using (bucket_id = 'videos');
 
 drop policy if exists "Users can upload videos to their own folder" on storage.objects;
+drop policy if exists "Users can upload videos and thumbnails to their own folder" on storage.objects;
 create policy "Users can upload videos to their own folder"
   on storage.objects for insert
   to authenticated
