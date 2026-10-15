@@ -111,9 +111,71 @@ function playVideo(video) {
   document.querySelector("#like-button").classList.remove("liked");
   document.querySelector("#like-count").textContent = String(currentLikes);
   document.querySelector("#comment-count").textContent = Number(video.comments).toLocaleString("ja-JP");
+  document.querySelector("#player-ratio").textContent = "—";
+  document.querySelector("#player-current-time").textContent = "0:00";
+  document.querySelector("#player-duration").textContent = "0:00";
+  document.querySelector("#player-seek").value = "0";
+  updatePlayerState();
   document.querySelector("#watch-section").hidden = false;
   document.querySelector("#watch-section").scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth" });
   player.play().catch(() => showToast("再生できませんでした。プレイヤーから再生してください"));
+}
+
+function formatPlayerTime(time) {
+  if (!Number.isFinite(time)) return "0:00";
+  const seconds = Math.floor(time);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = String(seconds % 60).padStart(2, "0");
+  return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${remainingSeconds}` : `${minutes}:${remainingSeconds}`;
+}
+
+function updatePlayerState() {
+  const player = document.querySelector("#main-video");
+  const frame = document.querySelector("#video-frame");
+  frame.classList.toggle("is-playing", !player.paused && !player.ended);
+  frame.classList.toggle("is-paused", player.paused || player.ended);
+  frame.classList.toggle("is-muted", player.muted || player.volume === 0);
+  document.querySelector("#player-play").setAttribute("aria-label", player.paused ? "再生" : "一時停止");
+  document.querySelector("#player-center-play").setAttribute("aria-label", player.paused ? "再生" : "一時停止");
+  document.querySelector("#player-mute").setAttribute("aria-label", player.muted || player.volume === 0 ? "音声をオン" : "ミュート");
+}
+
+function updatePlayerProgress() {
+  const player = document.querySelector("#main-video");
+  document.querySelector("#player-current-time").textContent = formatPlayerTime(player.currentTime);
+  document.querySelector("#player-duration").textContent = formatPlayerTime(player.duration);
+  document.querySelector("#player-seek").value = player.duration
+    ? String(Math.round((player.currentTime / player.duration) * 1000))
+    : "0";
+}
+
+function updateVideoDimensions() {
+  const player = document.querySelector("#main-video");
+  const frame = document.querySelector("#video-frame");
+  if (!player.videoWidth || !player.videoHeight) return;
+
+  const ratio = player.videoWidth / player.videoHeight;
+  frame.style.setProperty("--video-ratio", `${player.videoWidth} / ${player.videoHeight}`);
+  let commonRatio = `${player.videoWidth}:${player.videoHeight}`;
+  if (Math.abs(ratio - 4 / 3) < 0.02) commonRatio = "4:3";
+  else if (Math.abs(ratio - 1) < 0.02) commonRatio = "1:1";
+  else if (Math.abs(ratio - 16 / 9) < 0.02) commonRatio = "16:9";
+  else if (Math.abs(ratio - 9 / 16) < 0.02) commonRatio = "9:16";
+  document.querySelector("#player-ratio").textContent = commonRatio;
+}
+
+async function togglePlayback() {
+  const player = document.querySelector("#main-video");
+  if (player.paused) {
+    try {
+      await player.play();
+    } catch {
+      showToast("この動画を再生できませんでした");
+    }
+  } else {
+    player.pause();
+  }
 }
 
 async function loadRemoteVideos() {
@@ -328,6 +390,51 @@ document.querySelector("#like-button").addEventListener("click", (event) => {
   button.setAttribute("aria-pressed", String(!liked));
   button.classList.toggle("liked", !liked);
   document.querySelector("#like-count").textContent = String(currentLikes + (liked ? 0 : 1));
+});
+
+const mainVideo = document.querySelector("#main-video");
+mainVideo.addEventListener("loadedmetadata", () => {
+  updateVideoDimensions();
+  updatePlayerProgress();
+});
+mainVideo.addEventListener("durationchange", updatePlayerProgress);
+mainVideo.addEventListener("timeupdate", updatePlayerProgress);
+mainVideo.addEventListener("play", updatePlayerState);
+mainVideo.addEventListener("pause", updatePlayerState);
+mainVideo.addEventListener("ended", updatePlayerState);
+mainVideo.addEventListener("error", () => showToast("動画を読み込めませんでした"));
+document.querySelector("#player-play").addEventListener("click", togglePlayback);
+document.querySelector("#player-center-play").addEventListener("click", togglePlayback);
+document.querySelector("#video-frame").addEventListener("click", (event) => {
+  if (event.target === mainVideo) togglePlayback();
+});
+document.querySelector("#player-seek").addEventListener("input", (event) => {
+  if (mainVideo.duration) mainVideo.currentTime = (Number(event.currentTarget.value) / 1000) * mainVideo.duration;
+});
+document.querySelector("#player-mute").addEventListener("click", () => {
+  mainVideo.muted = !mainVideo.muted;
+  updatePlayerState();
+});
+document.querySelector("#player-volume").addEventListener("input", (event) => {
+  mainVideo.volume = Number(event.currentTarget.value);
+  mainVideo.muted = mainVideo.volume === 0;
+  updatePlayerState();
+});
+document.querySelector("#player-fullscreen").addEventListener("click", async () => {
+  const frame = document.querySelector("#video-frame");
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else if (frame.requestFullscreen) {
+      await frame.requestFullscreen();
+    } else if (mainVideo.webkitEnterFullscreen) {
+      mainVideo.webkitEnterFullscreen();
+    } else {
+      showToast("このブラウザーでは全画面表示を利用できません");
+    }
+  } catch {
+    showToast("全画面表示に切り替えできませんでした");
+  }
 });
 
 document.querySelector("#search-form").addEventListener("submit", (event) => {
