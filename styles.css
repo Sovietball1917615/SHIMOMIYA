@@ -181,11 +181,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .dialog-card input:not([type="file"]),.dialog-card textarea,.dialog-card select { width: 100%; border: 1px solid #e8e6e0; border-radius: 5px; padding: 10px 11px; background: #fff; color: var(--ink); font-size: 12px; }
 .dialog-card input[type="file"] { width: 100%; font-size: 10px; color: #77756f; }
 .dialog-card textarea { resize: vertical; }
-.google-auth-button { min-height: 40px; border: 1px solid #e5e2dc; border-radius: 5px; background: #fff; color: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; }
-.google-auth-button:hover:not(:disabled) { background: #f8f7f4; }
-.google-auth-button:disabled { opacity: .65; cursor: default; }
-.auth-divider { display: flex; align-items: center; gap: 10px; color: #9a9790; font-size: 9px; }
-.auth-divider::before,.auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
 .thumbnail-preview { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 5px; background: #f0eee8; }
 .thumbnail-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .dialog-close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; color: #898780; font-size: 23px; line-height: 1; cursor: pointer; }

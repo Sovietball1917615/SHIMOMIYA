@@ -241,11 +241,7 @@ async function loadProfile(user) {
 
   if (data) return data;
 
-  const defaultName = user.user_metadata?.display_name
-    || user.user_metadata?.full_name
-    || user.user_metadata?.name
-    || user.email?.split("@")[0]
-    || "SHIMOMIYA user";
+  const defaultName = user.user_metadata?.display_name || user.email?.split("@")[0] || "SHIMOMIYA user";
   const { data: createdProfile, error: createError } = await supabaseClient
     .from("profiles")
     .upsert({ user_id: user.id, display_name: defaultName, bio: "" }, { onConflict: "user_id" })
@@ -325,32 +321,7 @@ function openProfileDialog() {
   document.querySelector("#profile-email").textContent = currentUser.email || "";
   document.querySelector("#profile-display-name").value = currentProfile?.display_name || currentUser.email?.split("@")[0] || "";
   document.querySelector("#profile-bio").value = currentProfile?.bio || "";
-  const googleLinked = currentUser.identities?.some((identity) => identity.provider === "google");
-  document.querySelector("#profile-google-status").textContent = googleLinked
-    ? "Googleアカウントは連携済みです。"
-    : "Googleアカウントを連携すると、次回からGoogleでもログインできます。";
-  document.querySelector("#google-link").disabled = Boolean(googleLinked);
-  document.querySelector("#google-link").textContent = googleLinked ? "Google連携済み" : "Googleアカウントを連携";
   document.querySelector("#profile-dialog").showModal();
-}
-
-async function startGoogleAuth(linkAccount = false) {
-  const button = document.querySelector(linkAccount ? "#google-link" : "#google-login");
-  const errorMessage = document.querySelector(linkAccount ? "#profile-error" : "#auth-error");
-  errorMessage.textContent = "";
-  button.disabled = true;
-  try {
-    if (!linkAccount && uploadAfterLogin) sessionStorage.setItem("shimomiya-upload-after-google", "true");
-    const options = { redirectTo: window.location.href.split("#")[0] };
-    const result = linkAccount
-      ? await supabaseClient.auth.linkIdentity({ provider: "google", options })
-      : await supabaseClient.auth.signInWithOAuth({ provider: "google", options });
-    if (result.error) throw result.error;
-  } catch (error) {
-    if (!linkAccount) sessionStorage.removeItem("shimomiya-upload-after-google");
-    errorMessage.textContent = `${linkAccount ? "Google連携" : "Googleログイン"}に失敗しました: ${error.message}`;
-    button.disabled = false;
-  }
 }
 
 async function saveProfile(event) {
@@ -395,15 +366,12 @@ async function saveProfile(event) {
 
 async function syncSession(session) {
   currentUser = session?.user || null;
-  const continueUploadAfterGoogle = Boolean(currentUser && sessionStorage.getItem("shimomiya-upload-after-google"));
-  if (continueUploadAfterGoogle) sessionStorage.removeItem("shimomiya-upload-after-google");
   currentProfile = null;
   updateAccountUI();
   if (currentUser) {
     try {
       currentProfile = await loadProfile(currentUser);
       updateAccountUI();
-      if (continueUploadAfterGoogle) document.querySelector("#upload-dialog").showModal();
     } catch (error) {
       document.querySelector("#connection-status").textContent = `プロフィールの読み込みに失敗: ${error.message}`;
     }
@@ -664,8 +632,6 @@ async function signOut() {
 }
 document.querySelector("#profile-logout").addEventListener("click", signOut);
 document.querySelector("#profile-form").addEventListener("submit", saveProfile);
-document.querySelector("#google-login").addEventListener("click", () => startGoogleAuth());
-document.querySelector("#google-link").addEventListener("click", () => startGoogleAuth(true));
 document.querySelector("#auth-switch").addEventListener("click", (event) => {
   authMode = authMode === "login" ? "signup" : "login";
   document.querySelector("#auth-error").textContent = "";
