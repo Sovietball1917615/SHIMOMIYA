@@ -6,8 +6,9 @@
 
 1. Supabaseでプロジェクトを作成し、Project URLと公開用のanon / publishable keyを確認します。`service_role` keyは絶対にブラウザーへ置かないでください。
 2. SupabaseのSQL Editorで [`supabase/schema.sql`](supabase/schema.sql) を実行します。`videos`・`profiles`テーブル、RLSポリシー、動画とサムネイル画像用の公開Storage bucketを作成します。機能追加後に更新した場合も、同じSQLを再実行して不足しているテーブル・列・ポリシーを追加してください。
-3. AuthenticationのURL Configurationで公開サイトのURLをSite URLおよびRedirect URLsに登録します。メール確認を有効にする場合は、ユーザーに確認メールが届くようメール設定も行ってください。
-4. `supabase-config.js`の`url`と`anonKey`にProject URLとanon / publishable keyを設定します。anon keyはブラウザーに公開される前提のキーです。データ保護はSQLのRLSポリシーで行われます。
+3. Google Cloud ConsoleでOAuthクライアントIDを作成し、承認済みリダイレクトURIに `https://<プロジェクトID>.supabase.co/auth/v1/callback` を登録します。SupabaseのAuthentication > Sign In / Providers > GoogleでGoogleプロバイダーを有効化し、クライアントIDとクライアントシークレットを登録します。
+4. SupabaseのAuthentication > URL Configurationで公開サイトのURLをSite URLおよびRedirect URLsに登録します。Googleを既存アカウントへ連携する場合は、Authenticationの設定でIdentity Linking（手動連携）も有効化してください。メール確認を有効にする場合は、ユーザーに確認メールが届くようメール設定も行ってください。
+5. `supabase-config.js`の`url`と`anonKey`にProject URLとanon / publishable keyを設定します。anon keyはブラウザーに公開される前提のキーです。データ保護はSQLのRLSポリシーで行われます。
 
 ```js
 window.SHIMOMIYA_SUPABASE_CONFIG = {
@@ -22,7 +23,7 @@ window.SHIMOMIYA_SUPABASE_CONFIG = {
 
 ## 実装範囲と制限
 
-- Supabase Authのメールアドレス・パスワードで新規登録とログインを行います。
+- Supabase Authのメールアドレス・パスワードまたはGoogleアカウントでログインできます。ログイン後はプロフィール画面からGoogleアカウントを既存アカウントへ連携できます。
 - ログインしたユーザーはMP4/WebM/MOVの動画を最大100MBまでアップロードできます。動画本体はStorage、タイトル・説明・カテゴリー・保存先はPostgresに保存され、一覧から再生できます。
 - 動画投稿時にJPEG/PNG/WebP形式、最大5MBのサムネイル画像を任意で設定できます。サムネイルは動画一覧とプレイヤーのポスターに表示されます。既存動画や画像未設定の動画は既定画像を使います。
 - ログインユーザーはヘッダーのプロフィールアイコンから表示名と自己紹介を編集できます。公開プロフィールの表示名は投稿動画一覧にも反映されます。
